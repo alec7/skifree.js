@@ -37,7 +37,6 @@ var looseLifeOnObstacleHit = true;
 var dropRates = {smallTree: 4, tallTree: 2, jump: 1, thickSnow: 1, rock: 1};
 if (localStorage.getItem('highScore')) highScore = localStorage.getItem('highScore');
 
-var USER_ID = 0;
 var USER_TOKEN = 'foo';
 
 function createGameSession(game) {
@@ -49,7 +48,7 @@ function createGameSession(game) {
     type: 'POST',
     url: '/spill/skifree',
     contentType: 'application/json',
-    data: JSON.stringify({action: 'session', userId: USER_ID})
+    data: JSON.stringify({action: 'session'})
   }).done(function(response) {
     if ( response.error ) {
       alert(response.error);
@@ -64,7 +63,7 @@ function gameOver() {
     type: 'POST',
     url: '/spill/skifree',
     contentType: 'application/json',
-    data: JSON.stringify({action: 'gameover', userId: USER_ID, token: USER_TOKEN, score: distanceTravelledInMetres})
+    data: JSON.stringify({action: 'gameover', token: USER_TOKEN, score: distanceTravelledInMetres})
   }).done(function(response) {
     resetGame();
   });
