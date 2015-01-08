@@ -54,8 +54,7 @@ function loadImages (sources, next) {
 	sources.each(function (src) {
 		var im = new Image();
 		im.onload = finish;
-		//im.src = '/skifree/' + src;
-		im.src = src;
+		im.src = '/skifree/' + src;
 		dContext.storeLoadedImage(src, im);
 	});
 }
