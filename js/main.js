@@ -306,16 +306,22 @@ function resizeCanvas() {
 	mainCanvas.height = window.innerHeight;
 }
 
+var lastDistanceTravelledInMetres;
 function createDifficultyInterval() {
   if ( progressiveDifficulty ) {
+    lastDistanceTravelledInMetres = 0;
     dropRates.smallTree = 4;
     dropRates.tallTree = 2;
 
     clearInterval(progressiveDifficulty);
   }
   progressiveDifficulty = setInterval(function() {
-    dropRates.smallTree++;
-    dropRates.tallTree++;
+    if ( lastDistanceTravelledInMetres < distanceTravelledInMetres ) {
+      dropRates.smallTree++;
+      dropRates.tallTree++;
+    }
+
+    lastDistanceTravelledInMetres = distanceTravelledInMetres;
   }, 5000);
 }
 
