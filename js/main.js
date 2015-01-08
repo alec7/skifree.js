@@ -34,40 +34,11 @@ var distanceTravelledInMetres = 0;
 var livesLeft = 5;
 var highScore = 0;
 var looseLifeOnObstacleHit = true;
+var progressiveDifficulty = true;
 var dropRates = {smallTree: 4, tallTree: 2, jump: 1, thickSnow: 1, rock: 1};
 if (localStorage.getItem('highScore')) highScore = localStorage.getItem('highScore');
 
-var USER_TOKEN = 'foo';
-
-function createGameSession(game) {
-  function _startGame() {
-    game.start();
-  }
-
-  $.ajax({
-    type: 'POST',
-    url: '/spill/skifree',
-    contentType: 'application/json',
-    data: JSON.stringify({action: 'session'})
-  }).done(function(response) {
-    if ( response.error ) {
-      alert(response.error);
-    }
-    USER_TOKEN = response.token;
-    _startGame();
-  });
-}
-
-function gameOver() {
-  $.ajax({
-    type: 'POST',
-    url: '/spill/skifree',
-    contentType: 'application/json',
-    data: JSON.stringify({action: 'gameover', token: USER_TOKEN, score: distanceTravelledInMetres})
-  }).done(function(response) {
-    resetGame();
-  });
-}
+var USER_TOKEN = '';
 
 function loadImages (sources, next) {
 	var loaded = 0;
@@ -83,7 +54,8 @@ function loadImages (sources, next) {
 	sources.each(function (src) {
 		var im = new Image();
 		im.onload = finish;
-		im.src = '/skifree/' + src;
+		//im.src = '/skifree/' + src;
+		im.src = src;
 		dContext.storeLoadedImage(src, im);
 	});
 }
@@ -107,13 +79,33 @@ function startNeverEndingGame (images) {
 	var infoBox;
 	var game;
 
+  function createToken(cb) {
+    $.ajax({
+      type: 'POST',
+      url: '/spill/skifree',
+      contentType: 'application/json',
+      data: JSON.stringify({action: 'session'})
+    }).done(function(response) {
+      if ( response.error ) {
+        alert(response.error);
+        return;
+      }
+      USER_TOKEN = response.token;
+      cb();
+    });
+  }
+
 	function resetGame () {
-		monstersComeOut = false;
-		distanceTravelledInMetres = 0;
-		livesLeft = 5;
-		highScore = localStorage.getItem('highScore');
-		game.reset();
-		game.addStaticObject(startSign);
+    createToken(function() {
+      createDifficultyInterval();
+
+      monstersComeOut = false;
+      distanceTravelledInMetres = 0;
+      livesLeft = 5;
+      highScore = localStorage.getItem('highScore');
+      game.reset();
+      game.addStaticObject(startSign);
+    });
 	}
 
 	function detectEnd () {
@@ -126,7 +118,16 @@ function startNeverEndingGame (images) {
 			game.pause();
 			game.cycle();
 
-      gameOver();
+      $.ajax({
+        type: 'POST',
+        url: '/spill/skifree',
+        contentType: 'application/json',
+        data: JSON.stringify({action: 'gameover', token: USER_TOKEN, score: distanceTravelledInMetres})
+      }).done(function(response) {
+        if ( response.error ) {
+          alert(response.error);
+        }
+      });
 		}
 	}
 
@@ -213,12 +214,12 @@ function startNeverEndingGame (images) {
 		distanceTravelledInMetres = parseFloat(player.getPixelsTravelledDownMountain() / pixelsPerMetre).toFixed(1);
 		if (!game.isPaused()) {
 			infoBox.setLines([
-				'SkiFree.js',
+				//'SkiFree.js',
 				infoBoxControls,
 				'Travelled ' + distanceTravelledInMetres + 'm',
 				'Skiers left: ' + livesLeft,
 				'High Score: ' + highScore,
-				'Created by Dan Hough (@basicallydan)',
+				//'Created by Dan Hough (@basicallydan)',
 				'Current Speed: ' + player.getSpeed()/*,
 				'Skier Map Position: ' + player.mapPosition[0].toFixed(1) + ', ' + player.mapPosition[1].toFixed(1),
 				'Mouse Map Position: ' + mouseMapPosition[0].toFixed(1) + ', ' + mouseMapPosition[1].toFixed(1)*/
@@ -295,13 +296,29 @@ function startNeverEndingGame (images) {
 	player.isMoving = false;
 	player.setDirection(270);
 
-	//game.start();
-  createGameSession(game);
+  createToken(function() {
+    createDifficultyInterval();
+    game.start();
+  });
 }
 
 function resizeCanvas() {
 	mainCanvas.width = window.innerWidth;
 	mainCanvas.height = window.innerHeight;
+}
+
+function createDifficultyInterval() {
+  if ( progressiveDifficulty ) {
+    dropRates.smallTree = 4;
+    dropRates.tallTree = 2;
+
+    clearInterval(progressiveDifficulty);
+  }
+  progressiveDifficulty = setInterval(function() {
+    console.warn("INCREMENTING");
+    dropRates.smallTree++;
+    dropRates.tallTree++;
+  }, 5000);
 }
 
 window.addEventListener('resize', resizeCanvas, false);
