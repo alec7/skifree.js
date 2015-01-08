@@ -315,7 +315,6 @@ function createDifficultyInterval() {
     clearInterval(progressiveDifficulty);
   }
   progressiveDifficulty = setInterval(function() {
-    console.warn("INCREMENTING");
     dropRates.smallTree++;
     dropRates.tallTree++;
   }, 5000);
